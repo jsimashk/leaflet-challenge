@@ -35,10 +35,10 @@
   
 // Only one base layer can be shown at a time
 var baseMaps = {
-    Satellite: satelliteLayer,
-    Light: lightLayer,
-    Dark: darkLayer,
-    Outdoors: outdoorsLayer
+    "Satellite": satelliteLayer,
+    "Light": lightLayer,
+    "Dark": darkLayer,
+    "Outdoors": outdoorsLayer
   };
   
  // An array which will be used to store created earthquakeMarkers
@@ -46,7 +46,7 @@ var baseMaps = {
 
 
   function markerSize(magnitude) {
-    return magnitude*6;
+    return magnitude*5;
   };
 
   function markerColor(magnitude){
@@ -63,6 +63,25 @@ var baseMaps = {
       if (magnitude >= 5)
         return "#c82538";
   }
+
+  var plates_coordinates = [];
+  var platesLines;
+
+  d3.json("static/data/plates.json").then(function(data){
+        //console.log(data.features[0].geometry.coordinates);
+
+        for(var i=0; i< data.features.length; i++)
+        {
+            var lat_lng = data.features[i].geometry.coordinates;
+            plates_coordinates.push(lat_lng);
+        }
+
+        //console.log(plates_coordinates);
+        platesLines = L.polyline(plates_coordinates, {color: 'orange', maxZoom: 18}).addTo(myMap);
+        
+        //console.log(platesLines);
+        //myMap.fitBounds(platesLayer.getBounds());
+  });
 
   d3.json("static/data/earthquakes.json").then(function(data) {
     //console.log(data.names);
@@ -101,8 +120,20 @@ var baseMaps = {
             // Setting our circle's radius equal to the output of our markerSize function
             // This will make our marker's size proportionate to its magnitude
             radius: markerSize(magnitude)
-          }).bindPopup("<h1>Magnitude: " + magnitude + "</h1> <hr> <h3>Population " + title + "</h3>")
-          .addTo(myMap);
+          }).bindPopup("<h1>Magnitude: " + magnitude + "</h1> <hr> <h3>Location: " + title + "</h3>")
+         .addTo(myMap);
+
+         /* earthquakeMarkers.push(
+            L.circleMarker(coordinates, {
+            fillOpacity: 0.75,
+            color: markerColor(magnitude), //"red",
+            fillColor: markerColor(magnitude), //"red",
+            // Setting our circle's radius equal to the output of our markerSize function
+            // This will make our marker's size proportionate to its magnitude
+            radius: markerSize(magnitude)
+          }).bindPopup("<h1>Magnitude: " + magnitude + "</h1> <hr> <h3>Location " + title + "</h3>")
+          )*/
+          //console.log(earthquakeMarkers);
      }
     
 });
@@ -112,11 +143,12 @@ var baseMaps = {
 // Add all the earthquakeMarkers to a new layer group.
 // Now we can handle them as one group instead of referencing each individually
 var earthquakeLayer = L.layerGroup(earthquakeMarkers);
+var platesLayer = L.layerGroup(platesLines);
 
 // Overlays that may be toggled on or off
 var overlayMaps = {
-    Earthquakes: earthquakeLayer,
-    FaultLines: earthquakeLayer
+    "Earthquakes": earthquakeLayer,
+    "Fault Lines": platesLayer
   };
 
   
@@ -130,7 +162,7 @@ var myMap = L.map("map", {
   
   // Pass our map layers into our layer control
   // Add the layer control to the map
-  L.control.layers(baseMaps, overlayMaps).addTo(myMap);
+  L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(myMap);
   
 
 
@@ -154,3 +186,5 @@ legend.onAdd = function (map) {
 };
 
 legend.addTo(myMap);
+
+
